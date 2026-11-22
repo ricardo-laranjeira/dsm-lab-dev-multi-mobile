@@ -33,16 +33,35 @@ internal open class EnderecoRepository(
         cidade: String,
         estado: String
     ): EnderecoResponse {
+        check(clienteId > 0) { "ID de cliente inválido." }
+        val complementoTratado = complemento?.trim()?.takeIf { it.isNotBlank() }
+
         val resposta = if (id == null) {
             apiService.criarEndereco(
                 clienteId,
-                EnderecoRequest(cep, endereco, numero, complemento, bairro, cidade, estado)
+                EnderecoRequest(
+                    cep = cep.trim(),
+                    endereco = endereco.trim(),
+                    numero = numero.trim(),
+                    complemento = complementoTratado,
+                    bairro = bairro.trim(),
+                    cidade = cidade.trim(),
+                    estado = estado.trim()
+                )
             )
         } else {
             apiService.atualizarEndereco(
                 clienteId,
                 id,
-                EnderecoUpdateRequest(cep, endereco, numero, complemento, bairro, cidade, estado)
+                EnderecoUpdateRequest(
+                    cep = cep.trim(),
+                    endereco = endereco.trim(),
+                    numero = numero.trim(),
+                    complemento = complementoTratado,
+                    bairro = bairro.trim(),
+                    cidade = cidade.trim(),
+                    estado = estado.trim()
+                )
             )
         }
         check(resposta.isSuccessful) {

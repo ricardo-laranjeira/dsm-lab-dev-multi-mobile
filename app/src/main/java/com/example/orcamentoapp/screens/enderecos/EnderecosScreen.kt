@@ -209,6 +209,7 @@ fun EnderecosScreen(
         FormularioEnderecoApi(
             inicial = editando,
             salvando = uiState.salvando,
+            erroApi = uiState.erro,
             onCancelar = { formulario = false },
             onSalvar = { cep, rua, numero, complemento, bairro, cidade, estado ->
                 viewModel.salvar(
@@ -264,6 +265,7 @@ fun EnderecosScreen(
 private fun FormularioEnderecoApi(
     inicial: EnderecoUi?,
     salvando: Boolean,
+    erroApi: String? = null,
     onCancelar: () -> Unit,
     onSalvar: (
         String, String, String, String, String, String, String
@@ -311,10 +313,11 @@ private fun FormularioEnderecoApi(
                 item {
                     CampoEndereco("Estado", estado) { estado = it }
                 }
-                if (erroFormulario.isNotBlank()) {
+                val mensagemErroVisivel = erroFormulario.ifBlank { erroApi.orEmpty() }
+                if (mensagemErroVisivel.isNotBlank()) {
                     item {
                         Text(
-                            erroFormulario,
+                            mensagemErroVisivel,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
