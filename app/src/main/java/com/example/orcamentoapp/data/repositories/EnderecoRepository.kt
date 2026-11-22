@@ -12,6 +12,9 @@ internal open class EnderecoRepository(
 
     open suspend fun listar(clienteId: Int): List<EnderecoResponse> {
         val resposta = apiService.listarEnderecos(clienteId)
+        if (resposta.code() == 404) {
+            return emptyList()
+        }
         check(resposta.isSuccessful) {
             resposta.errorBody()?.string()?.takeIf { it.isNotBlank() }
                 ?: ("Não foi possível carregar os endereços (HTTP ${resposta.code()}).")

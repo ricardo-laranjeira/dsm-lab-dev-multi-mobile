@@ -105,6 +105,18 @@ class EnderecoRepositoryTest {
     }
 
     @Test
+    fun listar_status404_retornaListaVazia() = runTest {
+        mockWebServer.enqueue(MockResponse().setResponseCode(404).setBody("{\"detail\":\"Nenhum endereço encontrado\"}"))
+
+        val resultado = repository.listar(clienteId = 10)
+
+        assertTrue(resultado.isEmpty())
+
+        val request = mockWebServer.takeRequest()
+        assertEquals("/clientes/10/enderecos/", request.path)
+    }
+
+    @Test
     fun listar_falhaHttp_lancaExcecao() = runTest {
         mockWebServer.enqueue(MockResponse().setResponseCode(500).setBody("Erro interno no servidor"))
 
