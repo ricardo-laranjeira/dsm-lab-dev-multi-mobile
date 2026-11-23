@@ -254,15 +254,19 @@ fun ClientesScreen(
         FormularioCliente(
             cliente = clienteEditando,
             salvando = uiState.salvando,
+            erroApi = uiState.erro,
             onCancelar = { mostrarFormulario = false },
             onGerenciarEnderecos = { id, nome ->
                 mostrarFormulario = false
                 onGerenciarEnderecos(id, nome)
             },
-            onSalvar = { nome, telefone, ativo ->
-                viewModel.salvar(clienteEditando?.id, nome, telefone, ativo) {
+            onSalvar = { nome, telefone, ativo, irParaEnderecos ->
+                viewModel.salvar(clienteEditando?.id, nome, telefone, ativo) { clienteSalvo ->
                     mostrarFormulario = false
                     clienteEditando = null
+                    if (irParaEnderecos) {
+                        onGerenciarEnderecos(clienteSalvo.id, clienteSalvo.nome)
+                    }
                 }
             }
         )
@@ -301,8 +305,9 @@ fun ClientesScreen(
 private fun FormularioCliente(
     cliente: ClienteUi?,
     salvando: Boolean,
+    erroApi: String? = null,
     onCancelar: () -> Unit,
-    onSalvar: (String, String, Boolean) -> Unit,
+    onSalvar: (nome: String, telefone: String, ativo: Boolean, irParaEnderecos: Boolean) -> Unit,
     onGerenciarEnderecos: (Int, String) -> Unit
 ) {
     var nome by remember(cliente) {
@@ -314,7 +319,7 @@ private fun FormularioCliente(
     var ativo by remember(cliente) {
         mutableStateOf(cliente?.ativo ?: true)
     }
-    var erro by remember(cliente) { mutableStateOf("") }
+    var erroFormulario by remember(cliente) { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onCancelar,
@@ -330,7 +335,7 @@ private fun FormularioCliente(
             ) {
                 OutlinedTextField(
                     value = nome,
-                    onValueChange = { nome = it; erro = "" },
+                    onValueChange = { nome = it; erroFormulario = "" },
                     label = { Text("Nome") },
                     singleLine = true,
                     enabled = !salvando,
@@ -339,7 +344,7 @@ private fun FormularioCliente(
 
                 OutlinedTextField(
                     value = telefone,
-                    onValueChange = { telefone = it; erro = "" },
+                    onValueChange = { telefone = it; erroFormulario = "" },
                     label = { Text("Telefone") },
                     singleLine = true,
                     enabled = !salvando,
@@ -376,9 +381,10 @@ private fun FormularioCliente(
                     }
                 }
 
-                if (erro.isNotBlank()) {
+                val mensagemErro = erroFormulario.ifBlank { erroApi.orEmpty() }
+                if (mensagemErro.isNotBlank()) {
                     Text(
-                        text = erro,
+                        text = mensagemErro,
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -386,23 +392,56 @@ private fun FormularioCliente(
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    when {
-                        nome.isBlank() ->
-                            erro = "Informe o nome do cliente."
-                        telefone.isBlank() ->
-                            erro = "Informe o telefone."
-                        nome.trim().length > 45 ->
-                            erro = "O nome deve ter até 45 caracteres."
-                        telefone.trim().length > 16 ->
-                            erro = "O telefone deve ter até 16 caracteres."
-                        else -> onSalvar(nome.trim(), telefone.trim(), ativo)
-                    }
-                },
-                enabled = !salvando
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (salvando) "Salvando..." else "Salvar")
+                Button(
+                    onClick = {
+                        when {
+                            nome.isBlank() ->
+                                erroFormulario = "Informe o nome do cliente."
+                            telefone.isBlank() ->
+                                erroFormulario = "Informe o telefone."
+                            nome.trim().length > 45 ->
+                                erroFormulario = "O nome deve ter até 45 caracteres."
+                            telefone.trim().length > 16 ->
+                                erroFormulario = "O telefone deve ter até 16 caracteres."
+                            else -> onSalvar(nome.trim(), telefone.trim(), ativo, false)
+                        }
+                    },
+                    enabled = !salvando,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (salvando) "Salvando..." else "Salvar")
+                }
+
+                if (cliente == null) {
+                    OutlinedButton(
+                        onClick = {
+                            when {
+                                nome.isBlank() ->
+                                    erroFormulario = "Informe o nome do cliente."
+                                telefone.isBlank() ->
+                                    erroFormulario = "Informe o telefone."
+                                nome.trim().length > 45 ->
+                                    erroFormulario = "O nome deve ter até 45 caracteres."
+                                telefone.trim().length > 16 ->
+                                    erroFormulario = "O telefone deve ter até 16 caracteres."
+                                else -> onSalvar(nome.trim(), telefone.trim(), ativo, true)
+                            }
+                        },
+                        enabled = !salvando,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Salvar e Adicionar Endereço")
+                    }
+                }
             }
         },
         dismissButton = {

@@ -51,12 +51,18 @@ internal class ClientesViewModel(
         }
     }
 
-    fun salvar(id: Int?, nome: String, telefone: String, ativo: Boolean, aoConcluir: () -> Unit = {}) {
+    fun salvar(id: Int?, nome: String, telefone: String, ativo: Boolean, aoConcluir: (ClienteUi) -> Unit = {}) {
         if (_uiState.value.salvando) return
         viewModelScope.launch {
             _uiState.update { it.copy(salvando = true, erro = null, mensagem = null) }
             try {
-                repository.salvar(id, nome, telefone, ativo)
+                val clienteSalvo = repository.salvar(id, nome, telefone, ativo)
+                val clienteUi = ClienteUi(
+                    id = clienteSalvo.idclientes,
+                    nome = clienteSalvo.nome,
+                    telefone = clienteSalvo.telefone,
+                    ativo = clienteSalvo.ativo
+                )
                 val lista = repository.listar()
                 _uiState.update { state ->
                     state.copy(
@@ -65,7 +71,7 @@ internal class ClientesViewModel(
                         erro = null
                     )
                 }
-                aoConcluir()
+                aoConcluir(clienteUi)
             } catch (e: Exception) {
                 _uiState.update { it.copy(erro = e.localizedMessage ?: "Erro ao salvar cliente.") }
             } finally {

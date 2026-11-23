@@ -72,8 +72,9 @@ class ClientesViewModelTest {
             nome = "Carlos Eduardo",
             telefone = "11777776666",
             ativo = true
-        ) {
+        ) { clienteSalvo ->
             callbackExecutado = true
+            assertEquals("Carlos Eduardo", clienteSalvo.nome)
         }
 
         val state = viewModel.uiState.value

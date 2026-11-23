@@ -282,45 +282,49 @@ private fun FormularioEnderecoApi(
     var estado by remember(inicial) { mutableStateOf(inicial?.estado.orEmpty()) }
     var erroFormulario by remember { mutableStateOf("") }
 
+    val mensagemErroVisivel = erroFormulario.ifBlank { erroApi.orEmpty() }
+
     AlertDialog(
         onDismissRequest = onCancelar,
         title = {
             Text(if (inicial == null) "Novo endereço" else "Editar endereço")
         },
         text = {
-            LazyColumn(
-                modifier = Modifier.heightIn(max = 420.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                item {
-                    CampoEndereco("CEP", cep) { cep = it }
-                }
-                item {
-                    CampoEndereco("Endereço / Rua", rua) { rua = it }
-                }
-                item {
-                    CampoEndereco("Número", numero) { numero = it }
-                }
-                item {
-                    CampoEndereco("Complemento (opcional)", complemento) { complemento = it }
-                }
-                item {
-                    CampoEndereco("Bairro", bairro) { bairro = it }
-                }
-                item {
-                    CampoEndereco("Cidade", cidade) { cidade = it }
-                }
-                item {
-                    CampoEndereco("Estado", estado) { estado = it }
-                }
-                val mensagemErroVisivel = erroFormulario.ifBlank { erroApi.orEmpty() }
-                if (mensagemErroVisivel.isNotBlank()) {
+            Column {
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 360.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     item {
-                        Text(
-                            mensagemErroVisivel,
-                            color = MaterialTheme.colorScheme.error
-                        )
+                        CampoEndereco("CEP", cep, !salvando) { cep = it; erroFormulario = "" }
                     }
+                    item {
+                        CampoEndereco("Endereço / Rua", rua, !salvando) { rua = it; erroFormulario = "" }
+                    }
+                    item {
+                        CampoEndereco("Número", numero, !salvando) { numero = it; erroFormulario = "" }
+                    }
+                    item {
+                        CampoEndereco("Complemento (opcional)", complemento, !salvando) { complemento = it; erroFormulario = "" }
+                    }
+                    item {
+                        CampoEndereco("Bairro", bairro, !salvando) { bairro = it; erroFormulario = "" }
+                    }
+                    item {
+                        CampoEndereco("Cidade", cidade, !salvando) { cidade = it; erroFormulario = "" }
+                    }
+                    item {
+                        CampoEndereco("Estado (UF)", estado, !salvando) { estado = it; erroFormulario = "" }
+                    }
+                }
+
+                if (mensagemErroVisivel.isNotBlank()) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = mensagemErroVisivel,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         },
@@ -330,11 +334,11 @@ private fun FormularioEnderecoApi(
                 onClick = {
                     erroFormulario = when {
                         cep.isBlank() -> "Informe o CEP."
-                        cep.trim().length > 10 -> "CEP deve ter até 10 caracteres."
+                        cep.trim().length > 15 -> "CEP deve ter até 15 caracteres."
                         rua.isBlank() -> "Informe o endereço."
                         rua.trim().length > 100 -> "Endereço deve ter até 100 caracteres."
                         numero.isBlank() -> "Informe o número."
-                        numero.trim().length > 5 -> "Número deve ter até 5 caracteres."
+                        numero.trim().length > 20 -> "Número deve ter até 20 caracteres."
                         bairro.isBlank() -> "Informe o bairro."
                         bairro.trim().length > 100 -> "Bairro deve ter até 100 caracteres."
                         cidade.isBlank() -> "Informe a cidade."
@@ -374,12 +378,14 @@ private fun FormularioEnderecoApi(
 private fun CampoEndereco(
     rotulo: String,
     valor: String,
+    habilitado: Boolean = true,
     aoAlterar: (String) -> Unit
 ) {
     OutlinedTextField(
         value = valor,
         onValueChange = aoAlterar,
         label = { Text(rotulo) },
+        enabled = habilitado,
         modifier = Modifier.fillMaxWidth(),
         singleLine = true
     )
